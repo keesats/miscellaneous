@@ -1,7 +1,6 @@
 #!/usr/bin/perl -w
 
-# Check the status of a VPN tunnel for a remote host to
-# specific peer.
+# Check the status of a VPN tunnel for a remote Cisco based host to a specific peer.
 #
 # Nagios config example:
 #   define command{
