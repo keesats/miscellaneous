@@ -1,6 +1,17 @@
 #!/usr/bin/python
 # -*- coding: iso-8859-15 -*-
-# 
+
+# Check the status of EMC Networker backups for a host.
+#
+# Nagios config example:
+#   define command{
+#     command_name check_networker_backup
+#     command_line $USER1$/nagios_check_networker_backup.py -H $ARG1$ --server HostnameNetworkerServer --timeout 10
+#   }
+#
+# You might put something like this in your Nagios service definition:
+#   check_networker_backup!HostnameBeingBackedUp
+
 from pynagios import Plugin, Response, make_option
 import datetime
 import re
