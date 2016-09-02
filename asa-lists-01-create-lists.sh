@@ -5,19 +5,12 @@
 # merged into a running Cisco ASA config
 # to be used as a dynamic-filter for blocking
 # inbound/outbound traffic.
-#
-# Then, based on which ASA is referenced
-# when calling the script, the logic will
-# be ran as desired for that device and then
-# merged into the running config via SSH.
 
 # global variables
 ASANAMEONE="ASA-ONE-HOSTNAME"
-ASANAMETWO="ASA-TWO-HOSTNAME"
 BASEPATH="/srv/salt/scripts/"
 BASETFTP="/tftpboot/"
 DATESTAMP=$(/bin/date +%Y.%m.%d.at.%H.%M.%S)
-DEVICENAME=$1 #set only input variable to DEVICENAME. Ex: ./rule-config.sh ASA-HOST-NAME
 FWENPASSWORD=""
 FWPASSWORD=$(tail -1 /root/asa_creds)
 FWUSERNAME=$(head -n 1 /root/asa_creds)
@@ -26,9 +19,7 @@ LISTPIX="list-pix.txt"
 LISTRANSOM="list-ransomeware.txt"
 LISTTEMP="list-temp.txt"
 LISTZEUS="list-zeus-tracker.txt"
-SORTEDLISTONE="sorted-list-asa-one.txt"
-SORTEDLISTTWO="sorted-list-asa-two.txt"
-TFTPSERV="1.1.1.1"
+SORTEDLIST="sorted-list.txt"
 
 # path setup
 PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin
@@ -65,71 +56,27 @@ sed -e '/^#/ d;/^$/d' -e 's/^/address /' -e 's/$/ 255.255.255.255/' \
 # Remove temp file
 rm $BASEPATH/$LISTTEMP
 
-# If we're updating ASA #2
-if [ $DEVICENAME = $ASANAMETWO ] ; then
+# Delete old files
+rm $BASEPATH/$SORTEDLIST
+rm $BASETFTP/$SORTEDLIST
 
-  # Delete old files
-  rm $BASEPATH/$SORTEDLISTTWO
-  rm $BASETFTP/$SORTEDLISTTWO
+# Combine lists wanted for use
+cat $BASEPATH/$LISTCOMPROMISED > $BASEPATH/$LISTTEMP
+cat $BASEPATH/$LISTPIX >> $BASEPATH/$LISTTEMP
+cat $BASEPATH/$LISTRANSOM >> $BASEPATH/$LISTTEMP
+cat $BASEPATH/$LISTZEUS >> $BASEPATH/$LISTTEMP
 
-  # Combine lists wanted for use
-  cat $BASEPATH/$LISTCOMPROMISED > $BASEPATH/$LISTTEMP
-  cat $BASEPATH/$LISTPIX >> $BASEPATH/$LISTTEMP
-  cat $BASEPATH/$LISTRANSOM >> $BASEPATH/$LISTTEMP
-  cat $BASEPATH/$LISTZEUS >> $BASEPATH/$LISTTEMP
+# Create final sorted listed for that will clear
+# the existing dynamic-filter and add all IPs from lists that
+# were chosen, in numerical order
+echo "no dynamic-filter blacklist" > $BASEPATH/$SORTEDLIST
+echo "dynamic-filter blacklist" >> $BASEPATH/$SORTEDLIST
+sort -d -r $BASEPATH/$LISTTEMP >> $BASEPATH/$SORTEDLIST
 
-  # Create final sorted listed for that will clear
-  # the existing dynamic-filter and add all IPs from lists that
-  # were chosen, in numerical order
-  echo "no dynamic-filter blacklist" > $BASEPATH/$SORTEDLISTTWO
-  echo "dynamic-filter blacklist" >> $BASEPATH/$SORTEDLISTTWO
-  sort -d -r $BASEPATH/$LISTTEMP >> $BASEPATH/$SORTEDLISTTWO
+# Transfer file to TFTP root dir and set permissions
+cp $BASEPATH/$SORTEDLISTONE $BASETFTP
+chmod 775 $BASETFTP/$SORTEDLIST
+chown nobody $BASETFTP/$SORTEDLIST
 
-  # Transfer file to TFTP root dir and set permissions
-  # ############################
-  cp $BASEPATH/$SORTEDLISTTWO $BASETFTP
-  chmod 775 $BASETFTP/$SORTEDLISTTWO
-  chown nobody $BASETFTP/$SORTEDLISTTWO
-
-  # Exit
-  exit 0
-
-fi
-# ...End of ASA #2
-
-
-# If we're updating ASA #1
-# ############################
-if [ $DEVICENAME = $ASANAMEONE ] ; then
-
-  # Delete old files
-  # ############################
-  rm $BASEPATH/$SORTEDLISTONE
-  rm $BASETFTP/$SORTEDLISTONE
-
-  # Combine lists wanted for use
-  # ############################
-  cat $BASEPATH/$LISTCOMPROMISED > $BASEPATH/$LISTTEMP
-  cat $BASEPATH/$LISTPIX >> $BASEPATH/$LISTTEMP
-  cat $BASEPATH/$LISTRANSOM >> $BASEPATH/$LISTTEMP
-  cat $BASEPATH/$LISTZEUS >> $BASEPATH/$LISTTEMP
-
-  # Create final sorted listed for that will clear
-  # the existing dynamic-filter and add all IPs from lists that
-  # were chosen, in numerical order
-  # ############################
-  echo "no dynamic-filter blacklist" > $BASEPATH/$SORTEDLISTONE
-  echo "dynamic-filter blacklist" >> $BASEPATH/$SORTEDLISTONE
-  sort -d -r $BASEPATH/$LISTTEMP >> $BASEPATH/$SORTEDLISTONE
-
-  # Transfer file to TFTP root dir and set permissions
-  # ############################
-  cp $BASEPATH/$SORTEDLISTONE $BASETFTP
-  chmod 775 $BASETFTP/$SORTEDLISTONE
-  chown nobody $BASETFTP/$SORTEDLISTONE
-
-  # Exit
-  exit 0
-
-fi
-# ...End of ASA #1
+# Exit
+exit 0
