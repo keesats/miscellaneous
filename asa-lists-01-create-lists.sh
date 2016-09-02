@@ -7,13 +7,8 @@
 # inbound/outbound traffic.
 
 # global variables
-ASANAMEONE="ASA-ONE-HOSTNAME"
 BASEPATH="/srv/salt/scripts/"
 BASETFTP="/tftpboot/"
-DATESTAMP=$(/bin/date +%Y.%m.%d.at.%H.%M.%S)
-FWENPASSWORD=""
-FWPASSWORD=$(tail -1 /root/asa_creds)
-FWUSERNAME=$(head -n 1 /root/asa_creds)
 LISTCOMPROMISED="list-compromised.txt"
 LISTPIX="list-pix.txt"
 LISTRANSOM="list-ransomeware.txt"
@@ -74,7 +69,7 @@ echo "dynamic-filter blacklist" >> $BASEPATH/$SORTEDLIST
 sort -d -r $BASEPATH/$LISTTEMP >> $BASEPATH/$SORTEDLIST
 
 # Transfer file to TFTP root dir and set permissions
-cp $BASEPATH/$SORTEDLISTONE $BASETFTP
+cp $BASEPATH/$SORTEDLIST $BASETFTP
 chmod 775 $BASETFTP/$SORTEDLIST
 chown nobody $BASETFTP/$SORTEDLIST
 
